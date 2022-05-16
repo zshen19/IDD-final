@@ -9,6 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Change made by JW
+
+
 
 ```{r}
 stochastic_run_sir_demography <- function(params, initial_cond, max_time, time_step, freq_dependent){
