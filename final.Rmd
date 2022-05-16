@@ -9,6 +9,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Change made by JW
+# Second change made by JW
+
+# Change made by ZS
+# second change by ZS
 
 ```{r}
 stochastic_run_sir_demography <- function(params, initial_cond, max_time, time_step, freq_dependent){
@@ -18,8 +23,10 @@ stochastic_run_sir_demography <- function(params, initial_cond, max_time, time_s
   gamma = params["gamma"]
   mu = params["mu"]
   eta = params["eta"]
-  v = params["v"]
-  # example
+  theta = params["theta"]
+
+  #making more test changes 
+  #even more changes
   
   # setting up times vector + number of time steps
   times = seq(0, max_time, time_step)
@@ -121,14 +128,6 @@ lines(infected_output$time, infected_output$incidI, col = "orange", lty = 1)
 #lines(infected_output$time, infected_output$R, col = 'orange', lty = 1)
 legend('topright', legend = c('S', 'I', 'incidI'), col = c('blue', 'red', 'orange'), pch = 16)
 ```
-
-
-
-
-
-
-
-
 
 
 
