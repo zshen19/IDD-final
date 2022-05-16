@@ -18,8 +18,10 @@ stochastic_run_sir_demography <- function(params, initial_cond, max_time, time_s
   gamma = params["gamma"]
   mu = params["mu"]
   eta = params["eta"]
-  v = params["v"]
-  # example
+  theta = params["theta"]
+
+  #making more test changes 
+  #even more changes
   
   # setting up times vector + number of time steps
   times = seq(0, max_time, time_step)
