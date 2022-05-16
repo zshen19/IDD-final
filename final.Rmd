@@ -13,8 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Second change made by JW
 
 # Change made by ZS
-# second change by ZS
-# new change
+
 
 ```{r}
 stochastic_run_sir_demography <- function(params, initial_cond, max_time, time_step, freq_dependent){
