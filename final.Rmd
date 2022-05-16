@@ -1,0 +1,155 @@
+---
+title: "final code"
+author: "Ziling Shen"
+date: "5/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+stochastic_run_sir_demography <- function(params, initial_cond, max_time, time_step, freq_dependent){
+  
+  # defining parameters
+  beta = params["beta"]
+  gamma = params["gamma"]
+  mu = params["mu"]
+  eta = params["eta"]
+  v = params["v"]
+  # example
+  
+  # setting up times vector + number of time steps
+  times = seq(0, max_time, time_step)
+  nsteps = length(times)
+
+  # setting up storage objects for each class
+  # populating objects with the initial conditions (0 for incidence)
+  # including N in output bc poulation size may change
+  S <- rep(NA, nsteps); S[1] = initial_cond['S']
+  I <- rep(NA, nsteps); I[1] = initial_cond['I']
+  R <- rep(NA, nsteps); R[1] = initial_cond['R']
+  incidI <- rep(NA, nsteps); incidI[1] = 0
+  N = rep(NA, nsteps); N[1] = S[1] + I[1] + R[1]
+  
+  # looping across all time steps except t=0
+  for(ii in 2:nsteps){
+    
+    # calculate N from prior step
+    # divide beta by updated N if frequency dependent; otherwise divide by 1
+    beta_divisor <- ifelse(freq_dependent == TRUE, N[ii-1], 1)
+
+    # calculating probabilities of infection, recovery, birth, death
+    pr_new_inf = 1 - exp(-time_step*beta/beta_divisor*I[ii-1])
+    pr_new_rec = 1 - exp(-time_step*gamma)
+    pr_birth = 1 - exp(-time_step*mu)
+    pr_death = 1 - exp(-time_step*eta)
+    pr_vacc = 1 - exp(-time_step*v)
+    
+    # drawing random number of infections, recoveries,
+    # births, and deaths *from each compartment*
+    new_inf = rbinom(1, S[ii-1], pr_new_inf)
+    new_rec = rbinom(1, I[ii-1], pr_new_rec)
+    new_births = rbinom(1, N[ii-1], pr_birth)
+    new_deaths_s = rbinom(1, S[ii-1], pr_death)
+    new_deaths_i = rbinom(1, I[ii-1], pr_death)
+    new_deaths_r = rbinom(1, R[ii-1], pr_death)
+    new_vacc = rbinom(1, S[ii-1], pr_vacc)
+    
+    # updating SIR, incidI, N values
+    S[ii] = S[(ii-1)] - new_inf + new_births - new_deaths_s - new_vacc
+    I[ii] = I[(ii-1)] + new_inf - new_rec - new_deaths_i
+    R[ii] = R[(ii-1)] + new_rec - new_deaths_r + new_vacc
+    incidI[ii] = new_inf
+    N[ii] = S[ii] + I[ii] + R[ii]
+
+  }
+  
+  # creating output object
+  out <- data.frame(cbind(times, S, I, R, N, incidI))
+
+  return(out)
+}
+```
+
+
+
+```{r}
+# setting up parameters
+  params = c(beta=1, gamma=0.2, mu=0.003, eta=0.003, v=0.005)
+  initial_cond = c(S=500000, I=1, R=0)
+  max_time = 365
+  time_step = 1
+  freq_dependent = TRUE
+  
+  ## There are many to create/store output for five simulations
+  ## Here, I'm appending all five simulations into one data frame for 
+  ## easy plotting using ggplot. 
+  
+  # setting number of simulations
+  n_sim = 20
+  
+  # creating empty matrix in which to store output
+  # note the dimensions + names must match the dimensions of the model output!
+  # I'm also adding a column for simulation number
+  infected_output <- matrix(NA,ncol=7)
+  colnames(infected_output) = c("times", "S", "I", "R", "N", "incidI", "sim_num")
+  
+  # running model for n_sim times
+  for(ii in 1:n_sim){
+    output <- stochastic_run_sir_demography(params, initial_cond, max_time, time_step, freq_dependent)
+    output <- cbind(output, sim_num = ii)
+    infected_output <- rbind(infected_output, output)
+  }
+  
+  # removing the blank first row + making into df
+  infected_output <- as.data.frame(infected_output[-1,])
+```
+
+
+
+```{r}
+N = infected_output$S[1] + infected_output$I[1] + infected_output$R[1] ## total population size
+
+# plotting output
+plot(NA, NA, xlim = c(0, max(infected_output$times)), ylim = c(0,N), xlab = 'time', ylab = 'num. population')
+lines(infected_output$time, infected_output$S, col = 'blue', lty = 1)
+lines(infected_output$time, infected_output$I, col = 'red', lty = 1)
+lines(infected_output$time, infected_output$incidI, col = "orange", lty = 1)
+#lines(infected_output$time, infected_output$R, col = 'orange', lty = 1)
+legend('topright', legend = c('S', 'I', 'incidI'), col = c('blue', 'red', 'orange'), pch = 16)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
