@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Change made by ZS
 
-# Change made by GM
 
 ```{r}
 stochastic_run_sir_demography <- function(params, initial_cond, max_time, time_step, freq_dependent){
@@ -129,14 +128,6 @@ lines(infected_output$time, infected_output$incidI, col = "orange", lty = 1)
 #lines(infected_output$time, infected_output$R, col = 'orange', lty = 1)
 legend('topright', legend = c('S', 'I', 'incidI'), col = c('blue', 'red', 'orange'), pch = 16)
 ```
-
-
-
-
-
-
-
-
 
 
 
