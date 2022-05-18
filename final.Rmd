@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r}
 run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   
@@ -55,9 +56,9 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   ## Compartments 
   
   ## For bats
-  S_b <- rep(NA, nsteps); S[1] = initial_cond['S_b']
-  E_b <- rep(NA, nsteps); S[1] = initial_cond['E_b']
-  I_b <- rep(NA, nsteps); S[1] = initial_cond['I_b']
+  S_b <- rep(NA, nsteps); S_b[1] = initial_cond['S_b']
+  E_b <- rep(NA, nsteps); E_b[1] = initial_cond['E_b']
+  I_b <- rep(NA, nsteps); I_b[1] = initial_cond['I_b']
   
   incidI_b <- rep(NA, nsteps); incidI_b[1] = 0
   
@@ -126,7 +127,7 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
     E_b[ii] = E_b[(ii-1)] + new_inf_E_b - new_lat_I_b - new_deaths_E_b
     I_b[ii] = I_b[(ii-1)]+ new_lat_I_b - new_deaths_I_b
     
-    incidI_b[ii] = new_inf_S_b
+    incidI_b[ii] = new_inf_E_b
     
     # tree compartments 
     S_d[ii] = S_d[(ii-1)] + new_births_S_d - new_deaths_S_d - new_inf_S_d + new_rep_I_d + new_inact_I_d
@@ -134,6 +135,7 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
     I_d[ii] = I_d[(ii-1)] + new_inf_S_d - new_rep_I_d - new_inact_I_d - new_deaths_I_d
     
     incidI_d[ii] = new_inf_S_d
+  
 
 
     # human compartments
@@ -143,6 +145,7 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
     R_h[ii] = R_h[(ii-1)] + new_rec_I_h - new_deaths_R_h
     
     N_h[ii] = S_h[ii] + E_h[ii] + I_h[ii] + R_h[ii]
+    incidI_h[ii] = new_inf_E_h + new_inf_S_dh
   }
   
   
@@ -157,9 +160,102 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
 ```
 
 
+```{r}
+# assign values to parameters
+ ## For bats
+  V_b = 0.003 #birth rate of bats
+  mu_b = 0.0005 #death rate of bats
+  beta_b = 0.0045 #transmission coefficient among bats
+  beta_bd = 0.4 #transmission coefficient from bats to susceptible date palm trees
+  lambda_b = 1/7 #1/latent period in bats
+
+  ## For trees
+  P_d = 0.5  #proportion of data palm trees at baseline
+  P_a = 0.5  #proportion of alternative plants at baseline
+  R_da = 1  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  V_d = 0  #birth rate of date palm trees
+  V_a = 0  #birth rate of alternative plants
+  mu_d = 0  #death rate of date palm trees
+  mu_a = 0 #death rate of alternative plants
+  theta_d = 1/60  #pot replacement rate 
+  gamma_d = 0.4  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = 0 #transmission coefficients among humans
+  beta_dh = 0.4 #transmission coefficient from infectious date palm trees to humans
+  sigma_h = 1/10 #1/latent period in humans: incubation 4~14 days
+  gamma_h = 1/10 #recovery rate in humans
+  v_h = 0.006 #birth rate for humans
+  mu_h = 0.006 #death rate for humans
+  k_mu = 0.5 #Nipah case fatality rate: 40-70% of cases
+
+param = list(
+    V_b = V_b, #birth rate of bats
+  mu_b = mu_b, #death rate of bats
+  beta_b = beta_b, #transmission coefficient among bats
+  beta_bd = beta_bd, #transmission coefficient from bats to susceptible date palm trees
+  lambda_b = lambda_b, #1/latent period in bats
+
+  ## For trees
+  P_d = P_d,  #proportion of data palm trees at baseline
+  P_a = P_a,  #proportion of alternative plants at baseline
+  R_da = R_da,  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  V_d = V_d,  #birth rate of date palm trees
+  V_a = V_a , #birth rate of alternative plants
+  mu_d = mu_d , #death rate of date palm trees
+  mu_a = mu_a,  #death rate of alternative plants
+  theta_d = theta_d,  #pot replacement rate 
+  gamma_d = gamma_d,  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = beta_h, #transmission coefficients among humans
+  beta_dh = beta_dh, #transmission coefficient from infectious date palm trees to humans
+  sigma_h = sigma_h, #1/latent period in humans: incubation 4~14 days
+  gamma_h = gamma_h, #recovery rate in humans
+  v_h = v_h, #birth rate for humans
+  mu_h = mu_h, #death rate for humans
+  k_mu = k_mu
+)
+
+
+max_time = 10*365 
+Tree = 100 * 1000000
+time_step = 1 
+initial_cond = c(S_b=11000, E_b=0, I_b=0,
+                 S_d=Tree*param$P_d, S_a=Tree*param$P_a, I_d=0,
+                 S_h=10000000, E_h=0, I_h=0, R_h=0)
+
+result <- run_nipah_discrete(param=param, initial_cond=initial_cond, max_time=max_time, time_step=1)
+
+
+```
 
 
 
+```{r}
+#par(mfrow = c(1,3))
+# bats
+plot(result$time, result$S_b, type="l", xlim = c(0, max_time), ylim = c(0, max(result$S_b, na.rm= TRUE)), lwd=2, col="blue", xlab = 'time', ylab = 'number', main = "bats")
+lines(result$time, result$I_b, type = 'l', lwd = 2, col = 'lightblue')
+lines(result$time, result$E_b, type="l", lwd=2, col="red")
+legend('topright', legend = c('S', 'I', 'E'), col = c('blue', 'lightblue', 'red'), bty = 'n', pch = 15, ncol = 1)
+# trees
+plot(result$time, result$S_d, type="l", xlim = c(0, max_time), ylim = c(0, max(result$S_d, na.rm= TRUE)), lwd=2, col="blue", xlab = 'time', ylab = 'number', main = "trees")
+lines(result$time, result$S_a, type = 'l', lwd = 2, col = 'lightblue')
+lines(result$time, result$I_d, type="l", lwd=2, col="red")
+legend('topright', legend = c('S_d', 'S_a', 'I_d'), col = c('blue', 'lightblue', 'red'), bty = 'n', pch = 15, ncol = 1)
+# humans
+plot(result$time, result$S_h, type="l", xlim = c(0, max_time), ylim = c(0, 100000000), lwd=2, col="blue", xlab = 'time', ylab = 'number', main = "humans")
+#lines(result$time, result$E_h, type = 'l', lwd = 2, col = 'lightblue')
+#lines(result$time, result$I_h, type="l", lwd=2, col="red")
+#lines(result$time, result$R_h, type="l", lwd=2, col="green")
+legend('topright', legend = c('S', 'E', 'I','R'), col = c('blue', 'lightblue', 'red','green'), bty = 'n', pch = 15, ncol = 1)
+
+```
 
 
 
