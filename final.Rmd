@@ -15,7 +15,11 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   ## Parameters
   
   ## For bats
-  
+  V_b = param$V_b #birth rate of bats
+  mu_b = param$mu_b #death rate of bats
+  beta_b = param$beta_b #transmission coefficient among bats
+  beta_bd = param$beta_bd #transmission coefficient from bats to susceptible date palm trees
+  lambda_b = param$lambda_b #1/latent period in bats
   
   
   ##
