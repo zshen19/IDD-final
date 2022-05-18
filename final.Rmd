@@ -55,7 +55,11 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   ## Compartments 
   
   ## For bats
+  S_b <- rep(NA, nsteps); S[1] = initial_cond['S_b']
+  E_b <- rep(NA, nsteps); S[1] = initial_cond['E_b']
+  I_b <- rep(NA, nsteps); S[1] = initial_cond['I_b']
   
+  incidI_b <- rep(NA, nsteps); incidI_b[1] = 0
   
   
   ##
