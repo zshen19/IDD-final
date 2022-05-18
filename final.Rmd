@@ -122,7 +122,11 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
     new_deaths_R_h = time_step * mu_h * R_h[ii-1]
     
     # bat compartments
+    S_b[ii] = S_b[(ii-1)] + new_births_S_b - new_deaths_S_b - new_inf_E_b
+    E_b[ii] = E_b[(ii-1)] + new_inf_E_b - new_lat_I_b - new_deaths_E_b
+    I_b[ii] = I_b[(ii-1)]+ new_lat_I_b - new_deaths_I_b
     
+    incidI_b[ii] = new_inf_S_b
     
     # tree compartments 
     S_d[ii] = S_d[(ii-1)] + new_births_S_d - new_deaths_S_d - new_inf_S_d + new_rep_I_d + new_inact_I_d
@@ -143,7 +147,9 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   
   
   ## The output values need to be updated 
-  out <- data.frame(cbind(time, S_d, S_a, I_d, S_h, E_h, I_h, R_h, N_h, incidI_d, incidI_h)) 
+  out <- data.frame(cbind(time, S_b, E_b, I_b, incidI_d[ii],
+                          S_d, S_a, I_d,incidI_d,
+                          S_h, E_h, I_h, R_h, N_h, incidI_h)) 
   
   return(out)
   
