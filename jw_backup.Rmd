@@ -1,7 +1,7 @@
 ---
-title: "final code"
+title: "jw backup"
 author: "Ziling Shen"
-date: "5/16/2022"
+date: "5/17/2022"
 output: html_document
 ---
 
@@ -106,25 +106,4 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
