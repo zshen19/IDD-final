@@ -1,0 +1,109 @@
+---
+title: "jw backup"
+author: "Ziling Shen"
+date: "5/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
+  
+  ## Parameters
+  
+  ## For bats
+  
+  
+  
+  ##
+  ## For trees
+  P_d = param$P_d  #proportion of data palm trees at baseline
+  P_a = param$P_a  #proportion of alternative plants at baseline
+  R_da = param$R_d  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  V_d = param$V_d  #birth rate of date palm trees
+  V_a = param$V_a  #birth rate of alternative plants
+  mu_d = param$mu_d  #death rate of date palm trees
+  mu_a = param$mu_a  #death rate of alternative plants
+  theta_d = param$theta_d  #pot replacement rate 
+  gamma_d = param$gamma_d  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  
+  
+  
+  
+  ##
+  time = seq(0, max_time, time_step)
+  nsteps = length(time)
+  
+  
+  ## Compartments 
+  
+  ## For bats
+  
+  
+  
+  ##
+  ## For trees
+  S_d <- rep(NA, nsteps); S[1] = initial_cond['S_a']
+  I_d <- rep(NA, nsteps); E[1] = initial_cond['I_d']
+  S_a <- rep(NA, nsteps); E[1] = initial_cond['S_a']
+  
+  incidI_d <- rep(NA, nsteps); incidI_d[1] = 0
+  
+  ## For humans 
+  
+  
+  ##
+  
+  for(ii in 2:max_time){
+    
+    ## changes in bat compartments
+    
+    ## changes in tree compartments 
+  
+    new_births_S_d = time_step * V_d * (max(S_d[ii-1],0) + max(I_d[ii-1],0)) 
+    new_births_S_a = time_step * V_a * max(S_a[ii-1],0)
+    new_deaths_S_d = time_step * mu_d * max(S_d[ii-1],0)
+    new_deaths_I_d = time_step * mu_d * max(I_d[ii-1],0)
+    new_deaths_S_a = time_step * mu_a * max(S_a[ii-1],0)
+    new_inf_S_d = time_step * R_da * beta_bd * (cos((ii-1)/365*2*pi-pi)+1)*0.5 * max(I_b[ii-1],0) * max(S_d[ii-1],0)
+    # beta_bd (transmission coefficient from bat to tree) is not defined yet 
+    new_rep_I_d = time_step * theta_d * max(I_d[ii-1],0)
+    new_inact_I_d = time_step * gamma_d * max(I_d[ii-1],0)
+    
+    ## changes in human compartments 
+
+    
+    
+    # bat compartments
+    
+    
+    # tree compartments 
+    S_d[ii] = S_d[(ii-1)] + new_births_S_d - new_deaths_S_d - new_inf_S_d + new_rep_I_d + new_inact_I_d
+    S_a[ii] = S_a[(ii-1)] + new_births_S_a - new_deaths_S_a
+    I_d[ii] = I_d[(ii-1)] + new_inf_S_d - new_rep_I_d - new_inact_I_d - new_deaths_I_d
+    
+    incidI_d[ii] = new_inf_S_d
+
+
+    # human compartments
+    
+    
+    
+  }
+  
+  
+  ## The output values need to be updated 
+  out <- data.frame(cbind(time, S, E, I_l, I_h, M, C, S_sn, E_sn, I_sn, I_sn_nr, incidI_l, incidI_h, incidM, incidC, incidI_sn, incidI_sn_nr)) 
+  
+  return(out)
+  
+}
+```
+
