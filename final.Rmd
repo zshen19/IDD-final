@@ -56,18 +56,18 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   
   ##
   ## For trees
-  S_d <- rep(NA, nsteps); S[1] = initial_cond['S_a']
-  I_d <- rep(NA, nsteps); E[1] = initial_cond['I_d']
-  S_a <- rep(NA, nsteps); E[1] = initial_cond['S_a']
+  S_d <- rep(NA, nsteps); S_d[1] = initial_cond['S_d']
+  I_d <- rep(NA, nsteps); I_d[1] = initial_cond['I_d']
+  S_a <- rep(NA, nsteps); S_a[1] = initial_cond['S_a']
   
   incidI_d <- rep(NA, nsteps); incidI_d[1] = 0
   
   ## For humans 
-  S_h = rep(NA, nsteps); S[1] = initial_cond['S_h']
-  E_h = rep(NA, nsteps); E[1] = initial_cond['E_h']
-  I_h = rep(NA, nsteps); I[1] = initial_cond['I_h']
-  I_d = rep(NA, nsteps); I[1] = initial_cond['I_d']
-  R_h = rep(NA, nsteps); R[1] = initial_cond['R_h']
+  S_h = rep(NA, nsteps); S_h[1] = initial_cond['S_h']
+  E_h = rep(NA, nsteps); E_h[1] = initial_cond['E_h']
+  I_h = rep(NA, nsteps); I_h[1] = initial_cond['I_h']
+  I_d = rep(NA, nsteps); I_d[1] = initial_cond['I_d']
+  R_h = rep(NA, nsteps); R_h[1] = initial_cond['R_h']
   N_h = rep(NA, nsteps); N_h[1] = S_h[1] + I_h[1] + R_h[1]
   
   incidI_h = rep(NA, nsteps); incidI_h[1] = 0
@@ -128,7 +128,7 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   
   
   ## The output values need to be updated 
-  out <- data.frame(cbind(time, S, E, I_l, I_h, M, C, S_sn, E_sn, I_sn, I_sn_nr, incidI_l, incidI_h, incidM, incidC, incidI_sn, incidI_sn_nr)) 
+  out <- data.frame(cbind(time, S_d, S_a, I_d, S_h, E_h, I_h, R_h, N_h, incidI_d, incidI_h)) 
   
   return(out)
   
