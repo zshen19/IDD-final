@@ -33,6 +33,13 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   
   
   ## For humans
+  beta_h = param$beta_h #transmission coefficients among humans
+  beta_dh = param$beta_dh #transmission coefficient from infectious date palm trees to humans
+  sigma_h = param$sigma_h #1/latent period in humans
+  gamma_h = param$gamma_h #recovery rate in humans
+  v_h = param$v_h #birth rate for humans
+  mu_h = param$mu_h #death rate for humans
+  k_mu = param$k_mu #Nipah case fatality rate
   
   
   
@@ -40,7 +47,6 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   ##
   time = seq(0, max_time, time_step)
   nsteps = length(time)
-  
   
   ## Compartments 
   
@@ -57,6 +63,14 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   incidI_d <- rep(NA, nsteps); incidI_d[1] = 0
   
   ## For humans 
+  S_h = rep(NA, nsteps); S[1] = initial_cond['S_h']
+  E_h = rep(NA, nsteps); E[1] = initial_cond['E_h']
+  I_h = rep(NA, nsteps); I[1] = initial_cond['I_h']
+  I_d = rep(NA, nsteps); I[1] = initial_cond['I_d']
+  R_h = rep(NA, nsteps); R[1] = initial_cond['R_h']
+  N_h = rep(NA, nsteps); N_h[1] = S_h[1] + I_h[1] + R_h[1]
+  
+  incidI_h = rep(NA, nsteps); incidI_h[1] = 0
   
   
   ##
@@ -78,8 +92,19 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
     new_inact_I_d = time_step * gamma_d * max(I_d[ii-1],0)
     
     ## changes in human compartments 
-
+    new_births_S_h = time_step * v_h * N_h[ii-1]
+    new_deaths_S_h = time_step * beta_h * I_h[ii-1] * S_h[ii-1]
+    new_inf_S_h = time_step * beta_dh * I_d[ii-1] * S_h[ii-1]
+    new_inf_S_dh = time_step * mu_h * S_h[ii-1]
     
+    new_inf_E_h = time_step * sigma_h * E_h[ii-1]
+    new_deaths_E_h = time_step * mu_h * E_h[ii-1]
+    
+    new_rec_I_h = time_step * gamma_h * I_h[ii-1]
+    new_nip_deaths_I_h = time_step * k_mu * I_h[ii-1]
+    new_deaths_I_h = time_step * mu_h * I_h[ii-1]
+    
+    new_deaths_R_h = time_step * mu_h * R_h[ii-1]
     
     # bat compartments
     
@@ -93,9 +118,12 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
 
 
     # human compartments
+    S_h[ii] = S_h[(ii-1)] + new_births_S_h - new_deaths_S_h - new_inf_S_h - new_inf_S_dh
+    E_h[ii] = E_h[(ii-1)] + new_inf_S_h + new_inf_S_dh - new_inf_E_h - new_deaths_E_h
+    I_h[ii] = I_h[(ii-1)] + new_inf_E_h - new_rec_I_h - new_nip_deaths_I_h - new_deaths_I_h
+    R_h[ii] = R_h[(ii-1)] + new_rec_I_h - new_deaths_R_h
     
-    
-    
+    N_h[ii] = S_h[ii] + E_h[ii] + I_h[ii] + R_h[ii]
   }
   
   
