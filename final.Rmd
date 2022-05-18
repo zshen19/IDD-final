@@ -86,9 +86,16 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   for(ii in 2:max_time){
     
     ## changes in bat compartments
+    new_births_S_b = time_step * V_b * (max(S_b[ii-1],0)+max(I_b[ii-1],0))
+    new_deaths_S_b = time_step * mu_b * max(S_b[ii-1],0)
+    new_deaths_E_b = time_step * mu_b * max(E_b[ii-1],0)
+    new_deaths_I_b = time_step * mu_b * max(I_b[ii-1],0)
+    new_inf_E_b = time_step * beta_b * max(S_b[ii-1],0)
+    new_lat_I_b = time_step * lambda_b * max(S_b[ii-1],0)
+    
+    
     
     ## changes in tree compartments 
-  
     new_births_S_d = time_step * V_d * (max(S_d[ii-1],0) + max(I_d[ii-1],0)) 
     new_births_S_a = time_step * V_a * max(S_a[ii-1],0)
     new_deaths_S_d = time_step * mu_d * max(S_d[ii-1],0)
