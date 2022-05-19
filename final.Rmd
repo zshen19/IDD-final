@@ -151,7 +151,7 @@ run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
   
   ## The output values need to be updated 
   out <- data.frame(cbind(time, S_b, E_b, I_b, incidI_d,
-                          S_d, S_a, I_d,incidI_d,
+                          S_d, S_a, I_d,incidI_b,
                           S_h, E_h, I_h, R_h, N_h, incidI_h)) 
   
   return(out)
