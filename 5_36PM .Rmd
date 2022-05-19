@@ -1,0 +1,393 @@
+---
+title: "final code"
+author: "Ziling Shen"
+date: "5/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+run_nipah_discrete <- function(param, max_time, time_step, initial_cond){
+  
+  ## Parameters
+  
+  ## For bats
+  V_b = param$V_b #birth rate of bats
+  mu_b = param$mu_b #death rate of bats
+  beta_b = param$beta_b #transmission coefficient among bats
+  beta_bd = param$beta_bd #transmission coefficient from bats to susceptible date palm trees
+  
+  
+  
+  ##
+  ## For trees
+  P_d = param$P_d  #proportion of data palm trees at baseline
+  P_a = param$P_a  #proportion of alternative plants at baseline
+  R_da = param$R_d  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  theta_d = param$theta_d  #pot replacement rate 
+  gamma_d = param$gamma_d  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = param$beta_h #transmission coefficients among humans
+  beta_dh = param$beta_dh #transmission coefficient from infectious date palm trees to humans
+  sigma_h = param$sigma_h #1/latent period in humans
+  gamma_h = param$gamma_h #recovery rate in humans
+  v_h = param$v_h #birth rate for humans
+  mu_h = param$mu_h #death rate for humans
+  k_mu = param$k_mu #Nipah case fatality rate
+  
+  
+  
+  
+  ##
+  time = seq(0, max_time, time_step)
+  nsteps = length(time)
+  
+  ## Compartments 
+  
+  ## For bats
+  S_b <- rep(NA, nsteps); S_b[1] = initial_cond['S_b']
+  I_b <- rep(NA, nsteps); I_b[1] = initial_cond['I_b']
+  
+  incidI_b <- rep(NA, nsteps); incidI_b[1] = 0
+  
+  
+  ##
+  ## For trees
+  S_d <- rep(NA, nsteps); S_d[1] = initial_cond['S_d']
+  I_d <- rep(NA, nsteps); I_d[1] = initial_cond['I_d']
+  S_a <- rep(NA, nsteps); S_a[1] = initial_cond['S_a']
+  
+  incidI_d <- rep(NA, nsteps); incidI_d[1] = 0
+  
+  ## For humans 
+  S_h = rep(NA, nsteps); S_h[1] = initial_cond['S_h']
+  E_h = rep(NA, nsteps); E_h[1] = initial_cond['E_h']
+  I_h = rep(NA, nsteps); I_h[1] = initial_cond['I_h']
+  I_d = rep(NA, nsteps); I_d[1] = initial_cond['I_d']
+  R_h = rep(NA, nsteps); R_h[1] = initial_cond['R_h']
+  N_h = rep(NA, nsteps); N_h[1] = S_h[1] + I_h[1] + R_h[1]
+  
+  incidI_h = rep(NA, nsteps); incidI_h[1] = 0
+  cumincid_h = rep(NA, nsteps); cumincid_h[1] = 0
+  mortI_h = rep(NA, nsteps); mortI_h[1] = 0
+  
+  
+  ##
+  
+  for(ii in 2:max_time){
+    
+    ## changes in bat compartments
+    new_births_S_b = time_step * V_b * (max(S_b[ii-1],0)+max(I_b[ii-1],0))
+    new_deaths_S_b = time_step * mu_b * max(S_b[ii-1],0)
+    new_deaths_I_b = time_step * mu_b * max(I_b[ii-1],0)
+    new_inf_S_b = time_step * beta_b * max(S_b[ii-1],0) * max(I_b[ii-1],0)
+    
+    
+    
+    ## changes in tree compartments 
+    new_inf_S_d = time_step * R_da * beta_bd * max(I_b[ii-1],0) * max(S_d[ii-1],0)
+    new_rep_I_d = time_step * theta_d * max(I_d[ii-1],0)
+    new_inact_I_d = time_step * gamma_d * max(I_d[ii-1],0)
+    
+    ## changes in human compartments 
+    new_births_S_h = time_step * v_h * max(N_h[ii-1],0)
+    new_deaths_S_h = time_step * beta_h * max (I_h[ii-1],0) * max(S_h[ii-1],0)
+    new_inf_S_h = time_step * beta_dh * max(I_d[ii-1],0) * max(S_h[ii-1],0)
+    new_inf_S_dh = time_step * mu_h * max(S_h[ii-1],0)
+    
+    new_inf_E_h = time_step * sigma_h * max(E_h[ii-1],0)
+    new_deaths_E_h = time_step * mu_h * max(E_h[ii-1],0)
+    
+    new_rec_I_h = time_step * gamma_h * max(I_h[ii-1],0)
+    new_nip_deaths_I_h = time_step * k_mu * max(I_h[ii-1],0)
+    new_deaths_I_h = time_step * mu_h * max(I_h[ii-1],0)
+    
+    new_deaths_R_h = time_step * mu_h * max(R_h[ii-1],0)
+    
+    # bat compartments
+    S_b[ii] = max(S_b[(ii-1)] + new_births_S_b - new_deaths_S_b - new_inf_S_b,0)
+    I_b[ii] = max(I_b[(ii-1)]+ new_inf_S_b - new_deaths_I_b,0)
+    
+    incidI_b[ii] = new_inf_S_b
+    
+    # tree compartments 
+    S_d[ii] = max(S_d[(ii-1)] - new_inf_S_d + new_rep_I_d + new_inact_I_d,0)
+    S_a[ii] = max(S_a[(ii-1)] ,0)
+    I_d[ii] = max(I_d[(ii-1)] + new_inf_S_d - new_rep_I_d - new_inact_I_d,0)
+    
+    incidI_d[ii] = new_inf_S_d
+  
+
+
+    # human compartments
+    S_h[ii] = max(S_h[(ii-1)] + new_births_S_h - new_deaths_S_h - new_inf_S_h - new_inf_S_dh,0)
+    E_h[ii] = max(E_h[(ii-1)] + new_inf_S_h + new_inf_S_dh - new_inf_E_h - new_deaths_E_h,0)
+    I_h[ii] = max(I_h[(ii-1)] + new_inf_E_h - new_rec_I_h - new_nip_deaths_I_h - new_deaths_I_h,0)
+    R_h[ii] = max(R_h[(ii-1)] + new_rec_I_h - new_deaths_R_h,0)
+    
+    N_h[ii] = S_h[ii] + E_h[ii] + I_h[ii] + R_h[ii]
+    incidI_h[ii] = new_inf_E_h + new_inf_S_dh
+    cumincid_h[ii] = cumincid_h[(ii-1)] + new_inf_E_h + new_inf_S_dh
+    mortI_h[ii] = mortI_h[(ii-1)] + new_nip_deaths_I_h
+  }
+  
+  
+  ## The output values need to be updated 
+  out <- data.frame(cbind(time, S_b, I_b, incidI_b,
+                          S_d, S_a, I_d,incidI_d,
+                          S_h, E_h, I_h, R_h, N_h, incidI_h,cumincid_h,mortI_h)) 
+  
+  return(out)
+  
+}
+```
+
+
+```{r}
+# assign values to parameters
+ ## For bats
+  V_b = 0 #birth rate of bats
+  mu_b = 0 #death rate of bats
+  beta_b = 0.000045 #transmission coefficient among bats
+  beta_bd = 0.004 #transmission coefficient from bats to susceptible date palm trees
+
+  ## For trees
+  P_d = 1  #proportion of data palm trees at baseline
+  P_a = 0  #proportion of alternative plants at baseline
+  R_da = 1  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  theta_d = 1  #pot replacement rate 
+  gamma_d = 1/2  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = 0.086 #transmission coefficients among humans
+  beta_dh = 0.01 #transmission coefficient from infectious date palm trees to humans
+  sigma_h = 1/10 #1/latent period in humans: incubation 4~14 days
+  gamma_h = 1/10 #recovery rate in humans
+  v_h = 0.006 #birth rate for humans
+  mu_h = 0.006 #death rate for humans
+  k_mu = 0.5 #Nipah case fatality rate: 40-70% of cases
+
+param = list(
+    V_b = V_b, #birth rate of bats
+  mu_b = mu_b, #death rate of bats
+  beta_b = beta_b, #transmission coefficient among bats
+  beta_bd = beta_bd, #transmission coefficient from bats to susceptible date palm trees
+
+
+  ## For trees
+  P_d = P_d,  #proportion of data palm trees at baseline
+  P_a = P_a,  #proportion of alternative plants at baseline
+  R_da = R_da,  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  theta_d = theta_d,  #pot replacement rate 
+  gamma_d = gamma_d,  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = beta_h, #transmission coefficients among humans
+  beta_dh = beta_dh, #transmission coefficient from infectious date palm trees to humans
+  sigma_h = sigma_h, #1/latent period in humans: incubation 4~14 days
+  gamma_h = gamma_h, #recovery rate in humans
+  v_h = v_h, #birth rate for humans
+  mu_h = mu_h, #death rate for humans
+  k_mu = k_mu
+)
+
+
+max_time = 90
+Tree = 1000
+time_step = 1 
+initial_cond = c(S_b=1000, I_b=1,
+                 S_d=Tree*param$P_d, S_a=Tree*param$P_a, I_d=0,
+                 S_h=1000, E_h=0, I_h=0, R_h=0)
+
+result <- run_nipah_discrete(param=param, initial_cond=initial_cond, max_time=max_time, time_step=1)
+
+
+```
+
+
+
+```{r}
+#par(mfrow = c(1,3))
+# bats
+plot(result$time, result$S_b, type="l", xlim = c(0, max_time), ylim = c(0, max(result$S_b, na.rm= TRUE)), lwd=2, col="blue", xlab = 'time', ylab = 'number', main = "bats")
+lines(result$time, result$I_b, type = 'l', lwd = 2, col = 'lightblue')
+legend('topright', legend = c('S', 'I', 'E'), col = c('blue', 'lightblue', 'red'), bty = 'n', pch = 15, ncol = 1)
+# trees
+plot(result$time, result$S_d, type="l", xlim = c(0, max_time), ylim = c(0, max(result$S_d, na.rm= TRUE)), lwd=2, col="blue", xlab = 'time', ylab = 'number', main = "trees")
+lines(result$time, result$S_a, type = 'l', lwd = 2, col = 'lightblue')
+lines(result$time, result$I_d, type="l", lwd=2, col="red")
+legend('topright', legend = c('S_d', 'S_a', 'I_d'), col = c('blue', 'lightblue', 'red'), bty = 'n', pch = 15, ncol = 1)
+# humans
+plot(result$time, result$S_h, type="l", xlim = c(0, max_time), ylim = c(0, max(result$N_h,na.rm=TRUE)), lwd=2, col="blue", xlab = 'time', ylab = 'number', main = "humans")
+lines(result$time, result$E_h, type = 'l', lwd = 2, col = 'lightblue')
+lines(result$time, result$I_h, type="l", lwd=2, col="red")
+lines(result$time, result$R_h, type="l", lwd=2, col="green")
+lines(result$time, result$mortI_h, type="l", lwd=2, col="black")
+legend('topright', legend = c('S', 'E','I','R', 'Mort'), col = c('blue', 'lightblue','red', 'green','black'), bty = 'n', pch = 15, ncol = 1)
+
+```
+
+
+```{r}
+# assign values to parameters
+ ## For bats
+  V_b = 0 #birth rate of bats
+  mu_b = 0 #death rate of bats
+  beta_b = 0.000045 #transmission coefficient among bats
+  beta_bd = 0.004 #transmission coefficient from bats to susceptible date palm trees
+
+  ## For trees
+  P_d = 0.8  #proportion of data palm trees at baseline
+  P_a = 0.2  #proportion of alternative plants at baseline
+  R_da = 1  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  theta_d = 1  #pot replacement rate 
+  gamma_d = 1/2  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = 0.086 #transmission coefficients among humans
+  beta_dh = 0.01 #transmission coefficient from infectious date palm trees to humans
+  sigma_h = 1/10 #1/latent period in humans: incubation 4~14 days
+  gamma_h = 1/10 #recovery rate in humans
+  v_h = 0.006 #birth rate for humans
+  mu_h = 0.006 #death rate for humans
+  k_mu = 0.5 #Nipah case fatality rate: 40-70% of cases
+
+param = list(
+    V_b = V_b, #birth rate of bats
+  mu_b = mu_b, #death rate of bats
+  beta_b = beta_b, #transmission coefficient among bats
+  beta_bd = beta_bd, #transmission coefficient from bats to susceptible date palm trees
+
+
+  ## For trees
+  P_d = P_d,  #proportion of data palm trees at baseline
+  P_a = P_a,  #proportion of alternative plants at baseline
+  R_da = R_da,  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  theta_d = theta_d,  #pot replacement rate 
+  gamma_d = gamma_d,  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = beta_h, #transmission coefficients among humans
+  beta_dh = beta_dh, #transmission coefficient from infectious date palm trees to humans
+  sigma_h = sigma_h, #1/latent period in humans: incubation 4~14 days
+  gamma_h = gamma_h, #recovery rate in humans
+  v_h = v_h, #birth rate for humans
+  mu_h = mu_h, #death rate for humans
+  k_mu = k_mu
+)
+
+
+max_time = 90 
+Tree = 1000
+time_step = 1 
+initial_cond = c(S_b=1000, I_b=1,
+                 S_d=Tree*param$P_d, S_a=Tree*param$P_a, I_d=0,
+                 S_h=1000, E_h=0, I_h=0, R_h=0)
+
+result2 <- run_nipah_discrete(param=param, initial_cond=initial_cond, max_time=max_time, time_step=1)
+```
+
+
+```{r}
+# assign values to parameters
+ ## For bats
+  V_b = 0 #birth rate of bats
+  mu_b = 0 #death rate of bats
+  beta_b = 0.000045 #transmission coefficient among bats
+  beta_bd = 0.004 #transmission coefficient from bats to susceptible date palm trees
+
+  ## For trees
+  P_d = 0.5  #proportion of data palm trees at baseline
+  P_a = 0.5  #proportion of alternative plants at baseline
+  R_da = 1  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  theta_d = 1  #pot replacement rate 
+  gamma_d = 1/2  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = 0.086 #transmission coefficients among humans
+  beta_dh = 0.01 #transmission coefficient from infectious date palm trees to humans
+  sigma_h = 1/10 #1/latent period in humans: incubation 4~14 days
+  gamma_h = 1/10 #recovery rate in humans
+  v_h = 0.006 #birth rate for humans
+  mu_h = 0.006 #death rate for humans
+  k_mu = 0.5 #Nipah case fatality rate: 40-70% of cases
+
+param = list(
+    V_b = V_b, #birth rate of bats
+  mu_b = mu_b, #death rate of bats
+  beta_b = beta_b, #transmission coefficient among bats
+  beta_bd = beta_bd, #transmission coefficient from bats to susceptible date palm trees
+
+
+  ## For trees
+  P_d = P_d,  #proportion of data palm trees at baseline
+  P_a = P_a,  #proportion of alternative plants at baseline
+  R_da = R_da,  #relative preference of date palm tree over alternative plant 
+                    # (equal preference: R_da = 1)
+  theta_d = theta_d,  #pot replacement rate 
+  gamma_d = gamma_d,  #viral inactivation rate in date palm tree sap
+  
+  
+  ## For humans
+  beta_h = beta_h, #transmission coefficients among humans
+  beta_dh = beta_dh, #transmission coefficient from infectious date palm trees to humans
+  sigma_h = sigma_h, #1/latent period in humans: incubation 4~14 days
+  gamma_h = gamma_h, #recovery rate in humans
+  v_h = v_h, #birth rate for humans
+  mu_h = mu_h, #death rate for humans
+  k_mu = k_mu
+)
+
+
+max_time = 90 
+Tree = 1000
+time_step = 1 
+initial_cond = c(S_b=1000, I_b=1,
+                 S_d=Tree*param$P_d, S_a=Tree*param$P_a, I_d=0,
+                 S_h=1000, E_h=0, I_h=0, R_h=0)
+
+result3 <- run_nipah_discrete(param=param, initial_cond=initial_cond, max_time=max_time, time_step=1)
+```
+
+
+
+
+
+
+```{r}
+#par(mfrow = c(1,3))
+plot(result$time, result$incidI_h, type="l", xlim = c(0, max_time), ylim = c(0, max(result$incidI_h,na.rm=TRUE)), lwd=2, col="red", xlab = 'time (days)', ylab = 'Daily incidence', main = "Comparision of daily incidence between three planting strategies")
+lines(result2$time, result2$incidI_h, type = 'l', lwd = 2, col = 'blue')
+lines(result3$time, result3$incidI_h, type = 'l', lwd = 2, col = 'green')
+legend('bottomright', legend = c('no alternative plants', 'A:D=1:4','A:D=1:1'), col = c('red', 'blue','green'), bty = 'n', pch = 15, ncol = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
